@@ -1,0 +1,113 @@
+.raiz {
+    -fx-background-color: #f2f4f8;
+    -fx-font-size: 13px;
+}
+
+.cabecalho {
+    -fx-background-color: #1f4e79;
+    -fx-padding: 12 16 12 16;
+    -fx-background-radius: 6;
+    -fx-alignment: center-left;
+}
+
+.cabecalho-titulo {
+    -fx-text-fill: white;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+}
+
+.cabecalho-os {
+    -fx-text-fill: #cfe0f1;
+    -fx-font-size: 12px;
+}
+
+.card {
+    -fx-background-color: white;
+    -fx-background-radius: 8;
+    -fx-border-color: #d5dce8;
+    -fx-border-radius: 8;
+    -fx-padding: 14;
+}
+
+.titulo-secao {
+    -fx-text-fill: #1f4e79;
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+}
+
+.botao-secundario {
+    -fx-background-color: #eaf0f7;
+    -fx-border-color: #9bb0c9;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+    -fx-text-fill: #1f4e79;
+    -fx-font-weight: bold;
+    -fx-cursor: hand;
+}
+
+.botao-primario {
+    -fx-background-color: #2e7d4f;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+    -fx-padding: 10 20 10 20;
+    -fx-background-radius: 4;
+    -fx-cursor: hand;
+}
+
+.aviso {
+    -fx-background-color: #fff8dc;
+    -fx-border-color: #e0c35a;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+    -fx-padding: 12 14 12 14;
+}
+
+.aviso-titulo {
+    -fx-text-fill: #7a5c00;
+    -fx-font-weight: bold;
+}
+
+.aviso .check-box {
+    -fx-text-fill: #5c4a00;
+}
+
+.rotulo {
+    -fx-text-fill: #2b3442;
+    -fx-font-weight: bold;
+    -fx-font-size: 12px;
+}
+
+.ajuda {
+    -fx-text-fill: #7a8494;
+    -fx-font-size: 11px;
+    -fx-font-style: italic;
+}
+
+.selo-encontrado {
+    -fx-background-color: #d4edda;
+    -fx-text-fill: #2e7d4f;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-background-radius: 10;
+    -fx-padding: 1 8 1 8;
+}
+
+.selo-nao-encontrado {
+    -fx-background-color: #fde2e2;
+    -fx-text-fill: #9b1c1c;
+}
+
+.mensagem {
+    -fx-text-fill: #1f4e79;
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+    -fx-background-color: #dfeaf6;
+    -fx-background-radius: 6;
+    -fx-padding: 8 14 8 14;
+}
+
+.mensagem-erro {
+    -fx-text-fill: #9b1c1c;
+    -fx-background-color: #fde2e2;
+}
