@@ -39,6 +39,11 @@ public class ControladoraRegistrarCotacao {
         return ordemDeServicoDAO.buscarPorNumero(numero);
     }
 
+    // Retorna o número da cotação pendente da OS, ou 0 se não houver.
+    public long buscarCotacaoPendente(long numeroOrdemServico) throws SQLException {
+        return cotacaoDAO.buscarIdPendente(numeroOrdemServico);
+    }
+
     public List<Peca> listarPecas() throws SQLException {
         return pecaDAO.listar();
     }
@@ -49,7 +54,7 @@ public class ControladoraRegistrarCotacao {
 
     public Cotacao registrarCotacao(long numeroOrdemServico, String diagnostico, List<ItemCotacaoPeca> itens,
                                     double valorMaoDeObra, int prazoExecucaoDias,
-                                    boolean cienciaAntieconomico) throws SQLException {
+                                    boolean substituirPendente) throws SQLException {
         exigirPermissao();
         cotacaoDAO.expirarVencidas();
 
@@ -58,6 +63,13 @@ public class ControladoraRegistrarCotacao {
             throw new IllegalStateException("Ordem de Serviço não encontrada");
         }
         exigirOrdemApta(os);
+
+        // A nova cotação substitui a pendente; a anterior é mantida com a situação Substituída.
+        long idPendente = cotacaoDAO.buscarIdPendente(os.getNumero());
+        if (idPendente != 0 && !substituirPendente) {
+            throw new IllegalStateException("A OS já possui a cotação nº " + idPendente
+                + " pendente. Confirme a substituição para registrar a nova cotação");
+        }
 
         exigirPreenchido(diagnostico, "Informe o diagnóstico técnico");
         if (valorMaoDeObra < 0) {
@@ -75,19 +87,18 @@ public class ControladoraRegistrarCotacao {
             throw new IllegalStateException("O valor total da cotação deve ser maior que zero");
         }
 
-        boolean antieconomico = isReparoAntieconomico(os, cotacao.getValorTotal());
-        if (antieconomico && !cienciaAntieconomico) {
-            throw new IllegalStateException("Reparo antieconômico: registre a ciência do cliente para prosseguir (RN06)");
-        }
-        cotacao.setReparoAntieconomico(antieconomico);
-        cotacao.setCienciaAntieconomico(antieconomico && cienciaAntieconomico);
+        // RN06: o UC08 apenas sinaliza o reparo antieconômico; a ciência do cliente é registrada no UC09.
+        cotacao.setReparoAntieconomico(isReparoAntieconomico(os, cotacao.getValorTotal()));
 
         if ("Aberta".equals(os.getSituacao())) {
             os.registrarSituacao("Em Diagnóstico", usuarioLogado);
         }
-        os.registrarSituacao("Aguardando Aprovação", usuarioLogado);
+        // Na substituição a OS já está Aguardando Aprovação e não muda de situação.
+        if (!"Aguardando Aprovação".equals(os.getSituacao())) {
+            os.registrarSituacao("Aguardando Aprovação", usuarioLogado);
+        }
 
-        cotacaoDAO.registrar(cotacao);
+        cotacaoDAO.registrar(cotacao, idPendente);
         return cotacao;
     }
 
@@ -98,18 +109,16 @@ public class ControladoraRegistrarCotacao {
         }
     }
 
-    private void exigirOrdemApta(OrdemDeServico os) throws SQLException {
+    // RN07: OS com cotação expirada aceita nova cotação.
+    private void exigirOrdemApta(OrdemDeServico os) {
         String situacao = os.getSituacao();
         boolean situacaoValida = "Aberta".equals(situacao)
             || "Em Diagnóstico".equals(situacao)
-            || "Aguardando Aprovação".equals(situacao);
+            || "Aguardando Aprovação".equals(situacao)
+            || "Expirada".equals(situacao);
         if (!situacaoValida) {
             throw new IllegalStateException("Não é possível registrar cotação para uma OS com situação \""
                 + situacao + "\"");
-        }
-        if (cotacaoDAO.existeVigente(os.getNumero())) {
-            throw new IllegalStateException("A OS já possui uma cotação vigente. "
-                + "Uma nova cotação só pode ser registrada quando a anterior expirar");
         }
     }
 

@@ -53,7 +53,8 @@ public class Conexao {
             + "situacao TEXT NOT NULL, "
             + "dataHora TEXT NOT NULL, "
             + "numeroOrdemDeServico INTEGER NOT NULL REFERENCES OrdemDeServico(numero), "
-            + "idUsuario INTEGER NOT NULL REFERENCES Usuario(id))",
+            // idUsuario nulo indica mudança feita pelo sistema (ex.: expiração da cotação, RN05).
+            + "idUsuario INTEGER REFERENCES Usuario(id))",
 
         "CREATE TABLE IF NOT EXISTS Peca ("
             + "codigo TEXT PRIMARY KEY, "
@@ -74,7 +75,6 @@ public class Conexao {
             + "prazoValidade TEXT NOT NULL, "
             + "situacao TEXT NOT NULL, "
             + "reparoAntieconomico INTEGER NOT NULL, "
-            + "cienciaAntieconomico INTEGER NOT NULL, "
             + "numeroOrdemDeServico INTEGER NOT NULL REFERENCES OrdemDeServico(numero), "
             + "idTecnico INTEGER NOT NULL REFERENCES Usuario(id))",
 

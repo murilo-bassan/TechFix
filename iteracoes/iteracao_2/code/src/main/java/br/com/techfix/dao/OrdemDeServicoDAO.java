@@ -11,6 +11,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Types;
 import java.time.LocalDateTime;
 
 public class OrdemDeServicoDAO {
@@ -123,7 +124,11 @@ public class OrdemDeServicoDAO {
             ps.setString(1, historico.getSituacao());
             ps.setString(2, historico.getDataHora().toString());
             ps.setLong(3, historico.getOrdemDeServico().getNumero());
-            ps.setLong(4, historico.getUsuario().getId());
+            if (historico.getUsuario() == null) {
+                ps.setNull(4, Types.INTEGER);
+            } else {
+                ps.setLong(4, historico.getUsuario().getId());
+            }
             ps.executeUpdate();
             try (ResultSet chaves = ps.getGeneratedKeys()) {
                 chaves.next();

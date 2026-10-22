@@ -3,6 +3,13 @@
     -fx-font-size: 13px;
 }
 
+.rolagem,
+.rolagem > .viewport {
+    -fx-background-color: #f2f4f8;
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+}
+
 .cabecalho {
     -fx-background-color: #1f4e79;
     -fx-padding: 12 16 12 16;

@@ -11,6 +11,7 @@ public class Cotacao {
     public static final String APROVADA = "Aprovada";
     public static final String RECUSADA = "Recusada";
     public static final String EXPIRADA = "Expirada";
+    public static final String SUBSTITUIDA = "Substituída";
 
     public static final int VALIDADE_DIAS = 7;
     public static final double PERCENTUAL_LIMITE_ANTIECONOMICO = 0.70;
@@ -24,7 +25,6 @@ public class Cotacao {
     private LocalDateTime prazoValidade;
     private String situacao;
     private boolean reparoAntieconomico;
-    private boolean cienciaAntieconomico;
     private OrdemDeServico ordemDeServico;
     private Usuario tecnico;
     private final List<ItemCotacaoPeca> itens = new ArrayList<>();
@@ -109,14 +109,6 @@ public class Cotacao {
 
     public void setReparoAntieconomico(boolean reparoAntieconomico) {
         this.reparoAntieconomico = reparoAntieconomico;
-    }
-
-    public boolean isCienciaAntieconomico() {
-        return cienciaAntieconomico;
-    }
-
-    public void setCienciaAntieconomico(boolean cienciaAntieconomico) {
-        this.cienciaAntieconomico = cienciaAntieconomico;
     }
 
     public OrdemDeServico getOrdemDeServico() {
