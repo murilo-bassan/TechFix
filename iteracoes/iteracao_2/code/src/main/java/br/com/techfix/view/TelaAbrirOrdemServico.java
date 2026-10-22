@@ -11,6 +11,7 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.ColumnConstraints;
@@ -54,6 +55,7 @@ public class TelaAbrirOrdemServico {
     private final CheckBox cienciaTaxa = new CheckBox("Cliente ciente de que, em caso de recusa da cotação, será cobrada a taxa de diagnóstico vigente (RN02).");
     private final Label infoEntrada = new Label();
     private final Label mensagem = new Label();
+    private final ScrollPane rolagem = new ScrollPane();
 
     private Cliente clienteEncontrado;
     private String defeitoInformado;
@@ -66,9 +68,15 @@ public class TelaAbrirOrdemServico {
         mensagem.setWrapText(true);
         mensagem.setMaxWidth(Double.MAX_VALUE);
         esconderQuandoVazio(mensagem);
+        // A mensagem fica no topo da tela; ao exibi-la, a rolagem volta para o início.
+        mensagem.textProperty().addListener((obs, antes, texto) -> {
+            if (!texto.isEmpty()) {
+                rolagem.setVvalue(0);
+            }
+        });
     }
 
-    public VBox getRaiz() {
+    public ScrollPane getRaiz() {
         numeroOS.getStyleClass().add("cabecalho-os");
         situacaoOS.getStyleClass().add("cabecalho-os");
         Label titulo = new Label("TechFix — Abrir Ordem de Serviço");
@@ -85,7 +93,10 @@ public class TelaAbrirOrdemServico {
             montarRodape());
         conteudo.setPadding(new Insets(16));
         conteudo.getStyleClass().add("raiz");
-        return conteudo;
+        rolagem.setContent(conteudo);
+        rolagem.setFitToWidth(true);
+        rolagem.getStyleClass().add("rolagem");
+        return rolagem;
     }
 
     private Node montarSecaoCliente() {

@@ -15,9 +15,10 @@ import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
-import javafx.scene.control.CheckBox;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
@@ -35,6 +36,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 
 public class TelaRegistrarCotacao {
 
@@ -50,6 +52,7 @@ public class TelaRegistrarCotacao {
     private final Label resumoEquipamento = new Label("—");
     private final Label resumoDefeito = new Label("—");
     private final Label resumoValorReferencia = new Label("—");
+    private final Label resumoCotacaoPendente = new Label("—");
     private final TextArea diagnostico = new TextArea();
     private final ComboBox<Peca> pecas = new ComboBox<>();
     private final TextField quantidade = new TextField("1");
@@ -59,10 +62,9 @@ public class TelaRegistrarCotacao {
     private final TextField prazoExecucao = new TextField();
     private final Label totalCotacao = new Label();
     private final Label validadeCotacao = new Label();
-    private final CheckBox cienciaAntieconomico = new CheckBox(
-        "Cliente ciente de que o reparo é antieconômico e deseja prosseguir (RN06).");
     private final VBox avisoAntieconomico = new VBox(6);
     private final Label mensagem = new Label();
+    private final ScrollPane rolagem = new ScrollPane();
 
     private OrdemDeServico ordemCarregada;
 
@@ -73,9 +75,15 @@ public class TelaRegistrarCotacao {
         mensagem.setMaxWidth(Double.MAX_VALUE);
         mensagem.visibleProperty().bind(mensagem.textProperty().isNotEmpty());
         mensagem.managedProperty().bind(mensagem.visibleProperty());
+        // A mensagem fica no topo da tela; ao exibi-la, a rolagem volta para o início.
+        mensagem.textProperty().addListener((obs, antes, texto) -> {
+            if (!texto.isEmpty()) {
+                rolagem.setVvalue(0);
+            }
+        });
     }
 
-    public VBox getRaiz() {
+    public ScrollPane getRaiz() {
         numeroOSCabecalho.getStyleClass().add("cabecalho-os");
         situacaoOS.getStyleClass().add("cabecalho-os");
         Label titulo = new Label("TechFix — Registrar Cotação");
@@ -94,7 +102,10 @@ public class TelaRegistrarCotacao {
         conteudo.setPadding(new Insets(16));
         conteudo.getStyleClass().add("raiz");
         atualizarTotais();
-        return conteudo;
+        rolagem.setContent(conteudo);
+        rolagem.setFitToWidth(true);
+        rolagem.getStyleClass().add("rolagem");
+        return rolagem;
     }
 
     private Node montarSecaoOrdem() {
@@ -111,6 +122,7 @@ public class TelaRegistrarCotacao {
         resumo.addRow(1, rotulo("Equipamento"), resumoEquipamento);
         resumo.addRow(2, rotulo("Valor de referência"), resumoValorReferencia);
         resumo.addRow(3, rotulo("Defeito relatado"), resumoDefeito);
+        resumo.addRow(4, rotulo("Cotação pendente"), resumoCotacaoPendente);
         resumoDefeito.setWrapText(true);
 
         return new VBox(8, rotulo("Buscar Ordem de Serviço (número)"), linhaBusca, resumo);
@@ -177,11 +189,10 @@ public class TelaRegistrarCotacao {
     private Node montarRodape() {
         Label tituloAviso = new Label("Reparo antieconômico");
         tituloAviso.getStyleClass().add("aviso-titulo");
-        Label explicacao = new Label("O valor total da cotação ultrapassa 70% do valor de referência do equipamento.");
+        Label explicacao = new Label("O valor total da cotação ultrapassa 70% do valor de referência do equipamento "
+            + "(RN06). A ciência do cliente será registrada na aprovação da cotação.");
         explicacao.setWrapText(true);
-        cienciaAntieconomico.setWrapText(true);
-        cienciaAntieconomico.setMaxWidth(Double.MAX_VALUE);
-        avisoAntieconomico.getChildren().addAll(tituloAviso, explicacao, cienciaAntieconomico);
+        avisoAntieconomico.getChildren().addAll(tituloAviso, explicacao);
         avisoAntieconomico.getStyleClass().add("aviso");
         avisoAntieconomico.setVisible(false);
         avisoAntieconomico.managedProperty().bind(avisoAntieconomico.visibleProperty());
@@ -225,7 +236,7 @@ public class TelaRegistrarCotacao {
         }
     }
 
-    private void exibirOrdem(OrdemDeServico os) {
+    private void exibirOrdem(OrdemDeServico os) throws SQLException {
         ordemCarregada = os;
         Equipamento equipamento = os.getEquipamento();
         Cliente cliente = equipamento.getCliente();
@@ -238,6 +249,10 @@ public class TelaRegistrarCotacao {
             ? MOEDA.format(equipamento.getValorReferencia())
             : "não informado (verificação de reparo antieconômico não será aplicada)");
         resumoDefeito.setText(os.getDefeitoRelatado());
+        long pendente = controladora.buscarCotacaoPendente(os.getNumero());
+        resumoCotacaoPendente.setText(pendente == 0
+            ? "nenhuma"
+            : "nº " + pendente + " (será substituída se uma nova cotação for registrada)");
         atualizarTotais();
     }
 
@@ -248,6 +263,7 @@ public class TelaRegistrarCotacao {
         resumoEquipamento.setText("—");
         resumoValorReferencia.setText("—");
         resumoDefeito.setText("—");
+        resumoCotacaoPendente.setText("—");
         atualizarTotais();
     }
 
@@ -310,9 +326,6 @@ public class TelaRegistrarCotacao {
 
         boolean antieconomico = ordemCarregada != null && controladora.isReparoAntieconomico(ordemCarregada, total);
         avisoAntieconomico.setVisible(antieconomico);
-        if (!antieconomico) {
-            cienciaAntieconomico.setSelected(false);
-        }
     }
 
     private double lerMaoDeObra() {
@@ -345,9 +358,13 @@ public class TelaRegistrarCotacao {
         }
 
         try {
+            long pendente = controladora.buscarCotacaoPendente(ordemCarregada.getNumero());
+            if (pendente != 0 && !confirmarSubstituicao(pendente)) {
+                return;
+            }
             List<ItemCotacaoPeca> solicitados = new ArrayList<>(itens);
             Cotacao cotacao = controladora.registrarCotacao(ordemCarregada.getNumero(), diagnostico.getText(),
-                solicitados, valorMaoDeObra, prazo, cienciaAntieconomico.isSelected());
+                solicitados, valorMaoDeObra, prazo, pendente != 0);
             exibirMensagem("Cotação nº " + cotacao.getId() + " registrada para a OS "
                 + ordemCarregada.getNumero() + ". A OS aguarda a aprovação do cliente.");
             exibirResumo(cotacao);
@@ -360,12 +377,21 @@ public class TelaRegistrarCotacao {
         }
     }
 
+    private boolean confirmarSubstituicao(long numeroCotacaoPendente) {
+        Alert alerta = new Alert(Alert.AlertType.CONFIRMATION);
+        alerta.setTitle("Substituir cotação");
+        alerta.setHeaderText("A OS já possui a cotação nº " + numeroCotacaoPendente + " pendente");
+        alerta.setContentText("Deseja substituí-la pela nova cotação? A cotação anterior será mantida "
+            + "com a situação \"" + Cotacao.SUBSTITUIDA + "\".");
+        Optional<ButtonType> resposta = alerta.showAndWait();
+        return resposta.isPresent() && resposta.get() == ButtonType.OK;
+    }
+
     private void limparFormulario() {
         diagnostico.clear();
         itens.clear();
         maoDeObra.clear();
         prazoExecucao.clear();
-        cienciaAntieconomico.setSelected(false);
     }
 
     private void exibirResumo(Cotacao cotacao) {
@@ -402,7 +428,7 @@ public class TelaRegistrarCotacao {
         texto.append("Prazo estimado de execução: ").append(cotacao.getPrazoExecucaoDias()).append(" dia(s)\n");
         texto.append("Valor total: ").append(MOEDA.format(cotacao.getValorTotal()));
         if (cotacao.isReparoAntieconomico()) {
-            texto.append("\n\nReparo antieconômico — ciência do cliente registrada.");
+            texto.append("\n\nReparo antieconômico — a ciência do cliente será registrada na aprovação.");
         }
         return texto.toString();
     }
