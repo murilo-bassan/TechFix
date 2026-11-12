@@ -277,18 +277,14 @@ public class TelaRegistrarCotacao {
 
     private void adicionarPeca() {
         Peca peca = pecas.getValue();
-        if (peca == null) {
-            mostrarErro("Selecione uma peça para adicionar");
-            return;
-        }
         int qtd;
         try {
             qtd = Integer.parseInt(quantidade.getText().trim());
         } catch (NumberFormatException e) {
             qtd = 0;
         }
-        if (qtd <= 0) {
-            mostrarErro("Informe uma quantidade maior que zero");
+        if (peca == null || qtd <= 0) {
+            mostrarErro("Selecione a peça e informe uma quantidade maior que zero");
             return;
         }
         for (int i = 0; i < itens.size(); i++) {
@@ -360,6 +356,9 @@ public class TelaRegistrarCotacao {
         try {
             long pendente = controladora.buscarCotacaoPendente(ordemCarregada.getNumero());
             if (pendente != 0 && !confirmarSubstituicao(pendente)) {
+                exibirOrdem(controladora.buscarOrdemServico(ordemCarregada.getNumero()));
+                exibirMensagem("Substituição cancelada. A cotação nº " + pendente
+                    + " continua pendente e a nova cotação não foi registrada.");
                 return;
             }
             List<ItemCotacaoPeca> solicitados = new ArrayList<>(itens);
